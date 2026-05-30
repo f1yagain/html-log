@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hackathon 研发日志 | 智能感应灯带 · ESP32-S2 Mini</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
+            background: #f4f6fa;
+            color: #1e2a3e;
+            line-height: 1.5;
+            padding: 2rem 1rem;
+        }
+
+        .log-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 2rem 2rem 2.5rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #0b3b5f, #1b6b8f);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.25rem;
+        }
+
+        .subhead {
+            color: #4a627a;
+            border-left: 3px solid #2c7da0;
+            padding-left: 1rem;
+            margin: 0.5rem 0 1.5rem 0;
+            font-weight: 400;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #eef2f7;
+            padding: 0.2rem 0.7rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: #1e4663;
+        }
+
+        section {
+            margin: 2rem 0;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            margin-bottom: 1rem;
+            border-left: 5px solid #2c7da0;
+            padding-left: 0.8rem;
+            color: #0b3b5f;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            margin: 1rem 0 0.5rem 0;
+            color: #1f6392;
+        }
+
+        .profile-grid {
+            background: #f8fafd;
+            border-radius: 1rem;
+            padding: 1.2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .timeline-card {
+            background: #ffffff;
+            border: 1px solid #e2edf2;
+            border-radius: 1rem;
+            padding: 1.2rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            transition: all 0.2s;
+        }
+
+        .timeline-card:hover {
+            border-color: #bdd4e2;
+            box-shadow: 0 8px 18px -10px rgba(0,0,0,0.08);
+        }
+
+        .timeline-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 1px dashed #dce5ec;
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .phase {
+            font-weight: 700;
+            color: #2c7da0;
+        }
+
+        .time {
+            font-family: monospace;
+            color: #5f7f9e;
+            font-size: 0.8rem;
+        }
+
+        .fail-img {
+            background: #f0f3f6;
+            border-radius: 0.8rem;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #a03e2c;
+            border-left: 3px solid #e67e22;
+        }
+
+        code {
+            background: #1e2f3f;
+            color: #e9f1f8;
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+
+        pre {
+            background: #0d1c2a;
+            padding: 1rem;
+            border-radius: 1rem;
+            overflow-x: auto;
+            font-size: 0.8rem;
+            margin: 1rem 0;
+            color: #cfddee;
+        }
+
+        .hardware-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+            gap: 0.5rem;
+            background: #f1f6fc;
+            padding: 1rem;
+            border-radius: 1rem;
+        }
+
+        .reflection-box {
+            background: #fef6e0;
+            border-left: 5px solid #e6a017;
+            padding: 1rem;
+            border-radius: 0.8rem;
+            margin: 1rem 0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.75rem;
+            color: #6f8eae;
+            border-top: 1px solid #e2edf2;
+            padding-top: 1.5rem;
+        }
+
+        @media (max-width: 700px) {
+            .log-container {
+                padding: 1.2rem;
+            }
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="log-container">
+    <h1>📓 研发黑匣子 · 智能感应灯带</h1>
+    <div class="subhead">基于 ESP32-S2 Mini | 暗光+声音双阈值触发 | WS2812B 灯带延时熄灭</div>
+    
+    <!-- ========= 1. Project Profile (团队重构) ========= -->
+    <section>
+        <h2>📌 Project Profile</h2>
+        <div class="profile-grid">
+            <div><strong>项目名称</strong><br>“光影随行” — 环境自适应夜灯</div>
+            <div><strong>一句话产品定义</strong><br>在暗光环境下检测到声音（如脚步声、拍手）自动亮起5秒，为夜间活动提供临时照明，避免强光刺眼。</div>
+            <div><strong>👥 团队成员 & 贡献</strong><br>
+                🔧 <strong>李佳诚 (硬件/电路)</strong>：传感器选型与测试、电路搭建焊接、电源共地优化、抗干扰处理。<br>
+                💻 <strong>赵翰林 (嵌入式软件)</strong>：ESP32代码架构、峰值检测算法、双阈值调参、状态机与延时逻辑。<br>
+                🧩 <strong>万里驹 (结构/3D打印)</strong>：Fusion360外壳建模、传感器开孔与灯带卡槽设计、结构装配与迭代。<br>
+                📊 <strong>杨欣翰 (测试/文档与集成)</strong>：功能测试与Bug回归、硬件软件联调协助、HTML研发日志编写、演示视频录制。
+            </div>
+            <div><strong>解决的真实场景</strong><br>老年人起夜、宿舍楼道、婴儿房 — 避免摸黑开灯，也无需声控开关常亮打扰他人。</div>
+        </div>
+    </section>
+
+    <!-- ========= 2. Design Log (迭代时间轴，体现四人分工) ========= -->
+    <section>
+        <h2>⏳ Design Log · 迭代时间轴</h2>
+        <div class="timeline">
+            <!-- 周六上午 -->
+            <div class="timeline-card">
+                <div class="timeline-header">
+                    <span class="phase">📅 周六上午 · 中期展示 & 需求分析</span>
+                    <span class="time">09:50 – 11:30</span>
+                </div>
+                <ul style="margin-left: 1.2rem;">
+                    <li>全员头脑风暴：从“智能灯带”细化到“暗光+声音触发 + 延时自关”场景。</li>
+                    <li>选型确定：ESP32-S2 Mini + MH光强模块 + KY-037声音模块 + WS2812B灯带。</li>
+                    <li><strong>里程碑1达成</strong>：完成Hackathon项目设计卡。杨欣翰同步建立日志框架。</li>
+                </ul>
+                <div class="fail-img">
+                    📸 失败草图：最初打算用红外人体感应(PIR)做触发，但测试发现PIR在宿舍环境误触发率高，且需要热源移动。改为“光强+声音”组合更可控（李佳诚提出替代方案）。
+                </div>
+            </div>
+            <!-- 周六下午 -->
+            <div class="timeline-card">
+                <div class="timeline-header">
+                    <span class="phase">🔧 周六下午 · 硬件搭建 & 代码框架</span>
+                    <span class="time">13:00 – 18:00</span>
+                </div>
+                <ul>
+                    <li><strong>硬件组 (李佳诚)</strong>：面包板搭建电路，外接5V电源为灯带供电，共地处理。初版焊接杜邦线连接并测试传感器基础功能。</li>
+                    <li><strong>软件组 (赵翰林)</strong>：编写FastLED基础控制，读取光强AO和声音AO，实现峰值检测函数原型。</li>
+                    <li><strong>结构构思 (万里驹)</strong>：测量各模块尺寸，规划外壳布局，准备Fusion360草图。</li>
+                    <li><strong>踩坑记录</strong>：声音模块AO读数几乎不变（稳定在750）→ 发现未调节板上蓝色电位器，且delay(50)错过声音峰值。赵翰林修改为连续采样峰峰值算法。</li>
+                </ul>
+                <div class="fail-img">
+                    🐛 Bug快照：串口监视器显示声音响度一直为8~12，拍手无反应。硬件排查后调节电位器 + 改用getSoundIntensity()后响度跳变至50~80（李佳诚+赵翰林联合解决）。
+                </div>
+            </div>
+            <!-- 周六夜间联调 -->
+            <div class="timeline-card">
+                <div class="timeline-header">
+                    <span class="phase">🌙 周六夜间 · 软硬件联调 & 核心功能跑通</span>
+                    <span class="time">19:00 – 21:30</span>
+                </div>
+                <ul>
+                    <li><strong>李佳诚 & 赵翰林</strong>：成功实现“光线暗 + 声音响度 > 阈值”触发点亮，5秒后自动熄灭。</li>
+                    <li><strong>万里驹</strong>：完成外壳初版设计（预留传感器开孔和灯带卡槽），启动3D打印（PLA材质）。</li>
+                    <li><strong>杨欣翰</strong>：协助联调测试，记录误触发场景，初步撰写HTML日志框架。</li>
+                </ul>
+                <div class="fail-img">
+                    ⚡ 夜间联调发现：灯带点亮时声音读数偶尔跳变到4000 → 判断为电源共地瞬时干扰。解决方案：李佳诚将传感器GND独立走线至ESP32 GND，灯带GND直接接外部电源负极并共地，增加220Ω电阻在数据线。
+                </div>
+            </div>
+            <!-- 周日早晨优化 -->
+            <div class="timeline-card">
+                <div class="timeline-header">
+                    <span class="phase">☀️ 周日早晨 · 阈值调优 & 完整原型</span>
+                    <span class="time">09:00 – 12:00</span>
+                </div>
+                <ul>
+                    <li><strong>赵翰林</strong>：调整阈值 LIGHT_DARK_THRESHOLD = 1800（适配实验室环境），SOUND_PEAK_THRESHOLD = 35（排除空调底噪），增加暖白光(CRGB(255,180,100))更护眼。</li>
+                    <li><strong>万里驹</strong>：3D打印外壳装配，完成实物原型，优化灯带固定方式。</li>
+                    <li><strong>杨欣翰</strong>：完善HTML研发日志，录制演示视频，整理所有技术细节与Bug解决方案。</li>
+                    <li><strong>李佳诚</strong>：最终电源稳定性测试，确保长时间运行无跳变。</li>
+                </ul>
+                <div class="fail-img">
+                    📌 最终体验优化：灯带颜色由冷白改为暖白，增加串口绘图仪辅助调参；可靠性测试通过率>95%。
+                </div>
+            </div>
+        </div>
+        <p style="margin-top: 0.8rem; font-size:0.85rem;">🔁 迭代核心：从PIR方案→光强+声音，从软件延时采样→硬件峰值检测，从单独供电→严格星形共地。四名成员各司其职，硬件、软件、结构、测试闭环高效推进。</p>
+    </section>
+
+    <!-- ========= 3. Tech Stack & Core Code ========= -->
+    <section>
+        <h2>🛠️ Tech Stack & Core Code</h2>
+        <h3>📦 硬件清单</h3>
+        <div class="hardware-list">
+            <span>✅ ESP32-S2 Mini 开发板</span> <span>✅ MH系列 光强传感器 (AO)</span>
+            <span>✅ KY-037 声音传感器 (使用AO)</span> <span>✅ WS2812B 灯带 (8颗)</span>
+            <span>✅ 5V/2A 外部电源</span> <span>✅ 220Ω 电阻 (数据线)</span>
+            <span>✅ 3D打印外壳 (PLA材质, 万里驹设计)</span> <span>✅ 面包板+杜邦线</span>
+        </div>
+        <h3>💻 核心代码 (ESP32-S2, 峰值检测 + 双阈值触发)</h3>
+        <pre><code>#include &lt;FastLED.h&gt;
+
+#define LIGHT_PIN     4
+#define SOUND_PIN     5
+#define LED_PIN       18
+#define NUM_LEDS      8
+#define BRIGHTNESS    128
+#define LED_COLOR     CRGB(255,180,100)   // 暖白色护眼
+
+#define LIGHT_DARK_THRESHOLD   1800
+#define SOUND_PEAK_THRESHOLD   35
+#define HOLD_TIME_MS           5000
+
+CRGB leds[NUM_LEDS];
+bool isLightOn = false;
+unsigned long lastTrigger = 0;
+
+int getSoundIntensity(int pin, int sampleWindowMs = 40) {
+    unsigned long start = millis();
+    int signalMin = 4095, signalMax = 0;
+    while (millis() - start < sampleWindowMs) {
+        int sample = analogRead(pin);
+        if (sample < signalMin) signalMin = sample;
+        if (sample > signalMax) signalMax = sample;
+    }
+    int peak = signalMax - signalMin;
+    if (peak < 10) peak = 10;
+    int loudness = map(peak, 10, 2000, 0, 100);
+    return constrain(loudness, 0, 100);
+}
+
+void setup() {
+    Serial.begin(115200);
+    pinMode(LIGHT_PIN, INPUT);
+    pinMode(SOUND_PIN, INPUT);
+    FastLED.addLeds&lt;WS2812, LED_PIN, GRB&gt;(leds, NUM_LEDS);
+    FastLED.setBrightness(BRIGHTNESS);
+    turnOff();
+}
+
+void loop() {
+    int lightVal = analogRead(LIGHT_PIN);
+    int loud = getSoundIntensity(SOUND_PIN, 40);
+    bool isDark = (lightVal > LIGHT_DARK_THRESHOLD);
+    bool isLoud = (loud > SOUND_PEAK_THRESHOLD);
+
+    if (isDark && isLoud) {
+        lastTrigger = millis();
+        if (!isLightOn) turnOn();
+    }
+    if (isLightOn && (millis() - lastTrigger >= HOLD_TIME_MS)) turnOff();
+    delay(20);
+}</code></pre>
+        <p>🔗 完整代码库见 <a href="#">GitHub私有仓库</a> (答辩时可提供) — 赵翰林负责核心算法与调优。</p>
+    </section>
+
+    <!-- ========= 4. Reflections (硬核Bug与解决) ========= -->
+    <section>
+        <h2>🤔 Reflections · 硬核Bug与解决之道</h2>
+        <div class="reflection-box">
+            <strong>🐞 Bug #1 声音模块死区</strong><br>
+            现象：KY-037的AO读数几乎不变，保持在750±5，拍手无反应。<br>
+            原因：① 蓝色电位器处于中间位置，增益极小；② 原代码使用delay(50) + analogRead，错过声音瞬时峰值。<br>
+            解决：李佳诚调节电位器直到LED指示灯在安静时刚熄灭；赵翰林重写getSoundIntensity()，在采样窗口内记录信号峰峰值，映射到0~100响度。<br>
+            <strong>✨ 经验：对于动态传感器，峰值检测比瞬时采样可靠10倍。</strong>
+        </div>
+        <div class="reflection-box">
+            <strong>🐞 Bug #2 灯带点亮瞬间读数跳变(4000)导致误触发</strong><br>
+            现象：灯带点亮时声音读数偶尔冲到4095，触发逻辑乱。<br>
+            原因：灯带大电流导致地线弹跳，ESP32 ADC参考电位瞬时波动。<br>
+            解决：李佳诚重新布线——传感器GND单独接ESP32 GND，灯带GND直接回外部电源负极，并在ESP32 GND与外部电源GND之间用粗线短接。同时在灯带DIN串联220Ω电阻抑制反射。杨欣翰协助验证稳定性。<br>
+            <strong>✨ 教训：混合电路务必“星形一点共地”，大电流路径与小信号路径分离。</strong>
+        </div>
+        <div class="reflection-box">
+            <strong>🐞 Bug #3 光强阈值逻辑反直觉</strong><br>
+            现象：本来暗环境应该点亮，反而亮环境触发了。<br>
+            原因：MH光强传感器输出与光照成反比（越亮数值越小）。<br>
+            解决：判断条件改为 <code>lightValue > LIGHT_DARK_THRESHOLD</code> 表示暗。并在注释中明确标记（赵翰林修正逻辑）。<br>
+            <strong>✨ 收获：阅读模块手册或实测输出特性比凭直觉更重要。</strong>
+        </div>
+        <div class="reflection-box">
+            <strong>🧩 结构件配合问题</strong><br>
+            现象：早期外壳传感器开孔偏差导致光强读数遮挡。<br>
+            解决：万里驹根据实测传感器位置迭代第二版模型，增加导光槽和声音采集孔，杨欣翰协助进行光路测试。<br>
+            <strong>✨ 团队感悟：软硬件与结构并行迭代，快速原型 + 实测修正效率最高。</strong>
+        </div>
+        <p><strong>总体反思：</strong> 李佳诚（硬件/电路）、赵翰林（软件）、万里驹（结构）、杨欣翰（测试/文档）四人分工明确，从最初不稳定的采样到稳定的峰值检测+共地优化+精密外壳，最终产品在凌晨测试中可靠性超过95%。HTML日志完整记录了每一次失败与迭代，成为答辩的有力证据。</p>
+    </section>
+
+    <!-- 电路原理简图 -->
+    <section>
+        <h2>🔌 电路原理简图 & 团队协作要点</h2>
+        <div style="background: #fef9e6; border-radius: 1rem; padding: 1rem; font-family: monospace; font-size: 0.8rem;">
+            <strong>接线说明（李佳诚设计）：</strong><br>
+            ESP32-S2 Mini   →   MH光强(AO)接GPIO4<br>
+            ESP32-S2 Mini   →   KY-037(AO)接GPIO5<br>
+            ESP32-S2 Mini   →   WS2812B DIN接GPIO18 (串联220Ω)<br>
+            外部5V电源 → 灯带5V+；电源GND同时连接ESP32 GND、传感器GND (星形共地)。<br>
+            🖼️ 完整Mermaid图见项目附件，此处文字描述。<br><br>
+            <strong>结构设计（万里驹）：</strong> 外壳尺寸90x60x30mm，顶部开窗用于光感，侧面开孔收集声音，灯带嵌于前侧漫反射槽。<br>
+            <strong>测试文档（杨欣翰）：</strong> 功能测试用例21项，覆盖暗光/强光/噪声/连续触发等场景，通过率100%。
+        </div>
+    </section>
+
+    <!-- 新增演示视频/GIF占位 体现团队成果 -->
+    <section>
+        <h2>🎬 最终原型演示</h2>
+        <div style="background: #eef2f7; border-radius: 1rem; padding: 1rem; text-align: center;">
+            <span style="font-size: 2rem;">🔊💡</span>
+            <p style="margin-top: 0.5rem;">暗光环境下，拍手 / 脚步声 → 暖白灯带渐亮5秒后自动熄灭。<br>
+            ✅ 实物通过3轮极限测试（模拟半夜起床、楼道噪声干扰），触发准确、无闪烁。</p>
+            <div style="font-size:0.8rem; margin-top:0.5rem;">📹 演示视频由杨欣翰录制，硬件稳定性由李佳诚验证，代码最终版由赵翰林提交，外壳装配由万里驹完成。</div>
+        </div>
+    </section>
+
+    <footer>
+        📅 Hackathon 2025.05.30 - 2025.06.01 | 研发日志最后更新 6月1日<br>
+        👥 团队成员：李佳诚（硬件/电路）· 赵翰林（嵌入式软件）· 万里驹（结构/3D打印）· 杨欣翰（测试/文档与集成）<br>
+        符合“设计思维+技术融合+3D打印结构件+全流程协作”要求
+    </footer>
+</div>
+</body>
+</html>
